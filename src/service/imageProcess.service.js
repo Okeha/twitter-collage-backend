@@ -102,7 +102,17 @@ const createCollage = async (req, res) => {
 
     return res.status(201).send(zipBuffer);
   } catch (err) {
-    clearFolders(res);
+    await fs.rm("process", { recursive: true });
+    await fs.rm("crop", { recursive: true });
+
+    // await fs.rm("crop", { recursive: true });
+    const files = await fs.readdir("uploads"); // List files in the directory
+
+    for (const file of files) {
+      const filePath = path.join("uploads/", file);
+      await fs.unlink(filePath); // Delete each file
+    }
+    // clearFolders(res);
     return res.status(500).json({
       success: false,
       body: {
