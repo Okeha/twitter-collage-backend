@@ -88,6 +88,10 @@ const createCollage = async (req, res) => {
 
     fourthImage.write("results/fourthImage.png");
 
+    const fifthImage = await Jimp.read(mainImage.path);
+
+    fifthImage.write("results/mainImage.png");
+
     console.log("Image Processing Completed");
 
     const imagePath = path.join(__dirname, "../../results");
