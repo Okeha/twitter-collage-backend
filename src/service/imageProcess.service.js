@@ -203,14 +203,6 @@ const clearFolders = async (uniqueCode) => {
     await fs.rm(`crop${uniqueCode}`, { recursive: true });
   }
 
-  // await fs.rm("crop", { recursive: true });
-  // const files = await fs.readdir("uploads"); // List files in the directory
-
-  // for (const file of files) {
-  //   const filePath = path.join("uploads/", file);
-  //   await fs.unlink(filePath); // Delete each file
-  // }
-
   if (fileStream.existsSync(`results${uniqueCode}`)) {
     await fs.rm(`results${uniqueCode}`, { recursive: true });
   }
@@ -225,6 +217,7 @@ const zipFiles = async (imagePath) => {
     zip.addFile(fileName, await fs.readFile(filePath)); // Add each image to the zip
   }
 
+  console.log("Zipped file successfully");
   return zip.toBuffer();
 };
 
