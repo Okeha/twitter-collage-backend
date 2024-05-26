@@ -3,33 +3,42 @@ const path = require("path");
 const fs = require("fs").promises;
 const fileStream = require("fs");
 const AdmZip = require("adm-zip");
+const { generateRandomString } = require("random-string-generator-library");
 
 //algorithm two
 
 const createCollage = async (req, res) => {
+  const uniqueCode = await generateUniqueId();
   try {
     //check if images are uploaded
     if (!req.files || req.files.length !== 9) {
-      return res.status(400).json({ error: "Please upload exactly 9 images" });
+      return res.status(400).json({
+        success: false,
+        body: { message: "Please upload exactly 9 images" },
+      });
     }
 
     const [mainImage, ...sideImages] = req.files;
 
+    //generate random code for file accessing
+
+    console.log(uniqueCode);
+
     // Crop Main Image into 4 and save as individual images (topLeft, topRight, bottomLeft, bottomRight) store in array
-    await cropImage(mainImage.path, res);
+    await cropImage(mainImage.path, uniqueCode);
 
     //resize side images
     for (i = 0; i < sideImages.length; i++) {
       let image = await Jimp.read(sideImages[i].path);
       resizeImage(image);
 
-      image.write(`process/side_image(${i + 1}).png`);
+      image.write(`process${uniqueCode}/side_image(${i + 1}).png`);
     }
 
     let blankImage = new Jimp(1152, 2048, 0x00000000);
-    headerImage = await Jimp.read("process/side_image(1).png");
-    middleImage = await Jimp.read("crop/firstQuadrant.png");
-    bottomImage = await Jimp.read("process/side_image(2).png");
+    headerImage = await Jimp.read(`process${uniqueCode}/side_image(1).png`);
+    middleImage = await Jimp.read(`crop${uniqueCode}/firstQuadrant.png`);
+    bottomImage = await Jimp.read(`process${uniqueCode}/side_image(2).png`);
 
     const firstImage = await blitImage(
       blankImage,
@@ -38,14 +47,14 @@ const createCollage = async (req, res) => {
       bottomImage
     );
 
-    firstImage.write("results/firstImage.png");
+    firstImage.write(`results${uniqueCode}/firstImage.png`);
 
     //second Image
 
     blankImage = new Jimp(1152, 2048, 0x00000000);
-    headerImage = await Jimp.read("process/side_image(3).png");
-    middleImage = await Jimp.read("crop/secondQuadrant.png");
-    bottomImage = await Jimp.read("process/side_image(4).png");
+    headerImage = await Jimp.read(`process${uniqueCode}/side_image(3).png`);
+    middleImage = await Jimp.read(`crop${uniqueCode}/secondQuadrant.png`);
+    bottomImage = await Jimp.read(`process${uniqueCode}/side_image(4).png`);
 
     const secondImage = await blitImage(
       blankImage,
@@ -54,14 +63,14 @@ const createCollage = async (req, res) => {
       bottomImage
     );
 
-    secondImage.write("results/secondImage.png");
+    secondImage.write(`results${uniqueCode}/secondImage.png`);
 
     //third Image
 
     blankImage = new Jimp(1152, 2048, 0x00000000);
-    headerImage = await Jimp.read("process/side_image(5).png");
-    middleImage = await Jimp.read("crop/thirdQuadrant.png");
-    bottomImage = await Jimp.read("process/side_image(6).png");
+    headerImage = await Jimp.read(`process${uniqueCode}/side_image(5).png`);
+    middleImage = await Jimp.read(`crop${uniqueCode}/thirdQuadrant.png`);
+    bottomImage = await Jimp.read(`process${uniqueCode}/side_image(6).png`);
 
     const thirdImage = await blitImage(
       blankImage,
@@ -70,14 +79,14 @@ const createCollage = async (req, res) => {
       bottomImage
     );
 
-    thirdImage.write("results/thirdImage.png");
+    thirdImage.write(`results${uniqueCode}/thirdImage.png`);
 
     //fourth Image
 
     blankImage = new Jimp(1152, 2048, 0x00000000);
-    headerImage = await Jimp.read("process/side_image(7).png");
-    middleImage = await Jimp.read("crop/fourthQuadrant.png");
-    bottomImage = await Jimp.read("process/side_image(8).png");
+    headerImage = await Jimp.read(`process${uniqueCode}/side_image(7).png`);
+    middleImage = await Jimp.read(`crop${uniqueCode}/fourthQuadrant.png`);
+    bottomImage = await Jimp.read(`process${uniqueCode}/side_image(8).png`);
 
     const fourthImage = await blitImage(
       blankImage,
@@ -86,15 +95,15 @@ const createCollage = async (req, res) => {
       bottomImage
     );
 
-    fourthImage.write("results/fourthImage.png");
+    fourthImage.write(`results${uniqueCode}/fourthImage.png`);
 
     const fifthImage = await Jimp.read(mainImage.path);
 
-    fifthImage.write("results/mainImage.png");
+    fifthImage.write(`results${uniqueCode}/mainImage.png`);
 
     console.log("Image Processing Completed");
 
-    const imagePath = path.join(__dirname, "../../results");
+    const imagePath = path.join(__dirname, `../../results${uniqueCode}`);
 
     const zipBuffer = await zipFiles(imagePath);
     res.setHeader("Content-Type", "application/zip");
@@ -102,21 +111,11 @@ const createCollage = async (req, res) => {
 
     // console.log(zipBuffer);
 
-    clearFolders(res);
+    clearFolders(uniqueCode);
 
     return res.status(201).send(zipBuffer);
   } catch (err) {
-    await fs.rm("process", { recursive: true });
-    await fs.rm("crop", { recursive: true });
-
-    // await fs.rm("crop", { recursive: true });
-    const files = await fs.readdir("uploads"); // List files in the directory
-
-    for (const file of files) {
-      const filePath = path.join("uploads/", file);
-      await fs.unlink(filePath); // Delete each file
-    }
-    // clearFolders(res);
+    clearFolders(uniqueCode);
     return res.status(500).json({
       success: false,
       body: {
@@ -126,61 +125,52 @@ const createCollage = async (req, res) => {
   }
 };
 
-const cropImage = async (mainImage) => {
-  try {
-    let imageToCrop = await Jimp.read(mainImage);
+const cropImage = async (mainImage, uniqueCode) => {
+  let imageToCrop = await Jimp.read(mainImage);
 
-    //   x- horizontal start point
-    //   y- vertical start point
-    //   width - length
-    //   height - height
+  //   x- horizontal start point
+  //   y- vertical start point
+  //   width - length
+  //   height - height
 
-    height = imageToCrop.bitmap.height;
-    width = imageToCrop.bitmap.width;
+  height = imageToCrop.bitmap.height;
+  width = imageToCrop.bitmap.width;
 
-    halfHeight = Math.floor(height / 2);
-    halfWidth = Math.floor(width / 2);
+  halfHeight = Math.floor(height / 2);
+  halfWidth = Math.floor(width / 2);
 
-    const firstQuadrant = imageToCrop;
+  const firstQuadrant = imageToCrop;
 
-    resizeX = 1152;
-    resizeY = 648;
+  resizeX = 1152;
+  resizeY = 648;
 
-    firstQuadrant
-      .crop(0, 0, halfWidth, halfHeight)
-      .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
-      .write("crop/firstQuadrant.png");
+  firstQuadrant
+    .crop(0, 0, halfWidth, halfHeight)
+    .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
+    .write(`crop${uniqueCode}/firstQuadrant.png`);
 
-    secondQuadrant = await Jimp.read(mainImage);
+  secondQuadrant = await Jimp.read(mainImage);
 
-    secondQuadrant
-      .crop(halfWidth, 0, halfWidth - 2, halfHeight - 2)
-      .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
-      .write("crop/secondQuadrant.png");
+  secondQuadrant
+    .crop(halfWidth, 0, halfWidth - 2, halfHeight - 2)
+    .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
+    .write(`crop${uniqueCode}/secondQuadrant.png`);
 
-    thirdQuadrant = await Jimp.read(mainImage);
+  thirdQuadrant = await Jimp.read(mainImage);
 
-    thirdQuadrant
-      .crop(0, halfHeight, halfWidth - 2, halfHeight - 2)
-      .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
-      .write("crop/thirdQuadrant.png");
+  thirdQuadrant
+    .crop(0, halfHeight, halfWidth - 2, halfHeight - 2)
+    .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
+    .write(`crop${uniqueCode}/thirdQuadrant.png`);
 
-    fourthQuadrant = await Jimp.read(mainImage);
+  fourthQuadrant = await Jimp.read(mainImage);
 
-    fourthQuadrant
-      .crop(halfWidth, halfHeight, halfWidth - 2, halfHeight - 2)
-      .resize(resizeX, resizeY, Jimp.RESIZE_CONTAIN)
-      .write("crop/fourthQuadrant.png");
+  fourthQuadrant
+    .crop(halfWidth, halfHeight, halfWidth - 2, halfHeight - 2)
+    .resize(resizeX, resizeY, Jimp.RESIZE_CONTAIN)
+    .write(`crop${uniqueCode}/fourthQuadrant.png`);
 
-    console.log("Crop Image processing done");
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      body: {
-        message: `Unable to process image! ${err}`,
-      },
-    });
-  }
+  console.log("Crop Image processing done");
 };
 
 const resizeImage = async (image) => {
@@ -203,27 +193,25 @@ const blitImage = async (
   return originalImage;
 };
 
-const clearFolders = async (res) => {
-  try {
-    await fs.rm("process", { recursive: true });
-    await fs.rm("crop", { recursive: true });
+const clearFolders = async (uniqueCode) => {
+  if (fileStream.existsSync(`process${uniqueCode}`)) {
+    await fs.rm(`process${uniqueCode}`, { recursive: true });
+  }
 
-    // await fs.rm("crop", { recursive: true });
-    const files = await fs.readdir("uploads"); // List files in the directory
+  if (fileStream.existsSync(`crop${uniqueCode}`)) {
+    await fs.rm(`crop${uniqueCode}`, { recursive: true });
+  }
 
-    for (const file of files) {
-      const filePath = path.join("uploads/", file);
-      await fs.unlink(filePath); // Delete each file
-    }
+  // await fs.rm("crop", { recursive: true });
+  const files = await fs.readdir("uploads"); // List files in the directory
 
-    await fs.rm("results", { recursive: true });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      body: {
-        message: `${err}`,
-      },
-    });
+  for (const file of files) {
+    const filePath = path.join("uploads/", file);
+    await fs.unlink(filePath); // Delete each file
+  }
+
+  if (fileStream.existsSync(`results${uniqueCode}`)) {
+    await fs.rm(`results${uniqueCode}`, { recursive: true });
   }
 };
 
@@ -237,6 +225,11 @@ const zipFiles = async (imagePath) => {
   }
 
   return zip.toBuffer();
+};
+
+const generateUniqueId = async () => {
+  code = generateRandomString(12);
+  return code;
 };
 
 module.exports = { createCollage };
