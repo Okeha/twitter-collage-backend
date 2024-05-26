@@ -187,6 +187,7 @@ const blitImage = async (
   middleImage,
   bottomImage
 ) => {
+  console.log("Starting Blit Processing");
   originalImage.blit(headerImage, 0, 0);
   originalImage.blit(middleImage, 0, 700);
   originalImage.blit(bottomImage, 0, 1348);
