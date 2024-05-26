@@ -105,15 +105,17 @@ const createCollage = async (req, res) => {
 
     const imagePath = path.join(__dirname, `../../results${uniqueCode}`);
 
-    const zipBuffer = await zipFiles(imagePath);
+    const zipFilePath = await zipFiles(imagePath, uniqueCode);
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", "attachment; filename=images.zip"); // Suggest download
 
     // console.log(zipBuffer);
 
-    clearFolders(uniqueCode);
+    console.log(zipFilePath);
+    const zipPath = path.join(__dirname, `../../${zipFilePath}`);
+    res.status(201).sendFile(zipPath);
 
-    return res.status(201).send(zipBuffer);
+    clearFolders(uniqueCode);
   } catch (err) {
     clearFolders(uniqueCode);
     return res.status(500).json({
@@ -199,6 +201,11 @@ const clearFolders = async (uniqueCode) => {
     await fs.rm(`process${uniqueCode}`, { recursive: true });
   }
 
+  if (fileStream.existsSync(`zip${uniqueCode}`)) {
+    const files = await fs.readdir(`zip${uniqueCode}`);
+    await fs.unlink(`zip${uniqueCode}/images.zip`);
+  }
+
   if (fileStream.existsSync(`crop${uniqueCode}`)) {
     await fs.rm(`crop${uniqueCode}`, { recursive: true });
   }
@@ -208,7 +215,16 @@ const clearFolders = async (uniqueCode) => {
   }
 };
 
-const zipFiles = async (imagePath) => {
+function isFileSync(path) {
+  try {
+    return fs.statSync(path).isFile();
+  } catch (error) {
+    // Handle potential errors during stat
+    return false;
+  }
+}
+
+const zipFiles = async (imagePath, uniqueCode) => {
   const zip = new AdmZip();
   const imageFiles = await fs.readdir(imagePath);
 
@@ -217,8 +233,18 @@ const zipFiles = async (imagePath) => {
     zip.addFile(fileName, await fs.readFile(filePath)); // Add each image to the zip
   }
 
-  console.log("Zipped file successfully");
-  return zip.toBuffer();
+  // Generate a temporary filename (optional)
+  const tempFilename = `zip${uniqueCode}/images.zip`; // Replace with your logic
+
+  if (!fileStream.existsSync(tempFilename)) {
+    fs.mkdir(`zip${uniqueCode}`);
+    await fs.writeFile(tempFilename, zip.toBuffer());
+  }
+  // Write the zip to a temporary file
+
+  console.log("Zipped file successfully created");
+
+  return tempFilename; // Return the temporary file path
 };
 
 const generateUniqueId = async () => {
