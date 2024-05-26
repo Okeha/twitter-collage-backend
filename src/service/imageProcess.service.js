@@ -176,7 +176,7 @@ const cropImage = async (mainImage, uniqueCode) => {
 const resizeImage = async (image) => {
   resizeX = 1152;
   resizeY = 700;
-  image.resize(resizeX, resizeY, Jimp.RESIZE_BEZIER);
+  image.cover(resizeX, resizeY).resize(resizeX, resizeY, Jimp.RESIZE_BILINEAR);
 
   return image;
 };
