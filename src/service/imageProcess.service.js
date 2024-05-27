@@ -169,7 +169,7 @@ const cropImage = async (mainImage, uniqueCode) => {
 
   fourthQuadrant
     .crop(halfWidth, halfHeight, halfWidth - 2, halfHeight - 2)
-    .resize(resizeX, resizeY, Jimp.RESIZE_CONTAIN)
+    .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
     .write(`crop${uniqueCode}/fourthQuadrant.png`);
 
   console.log("Crop Image processing done");
@@ -226,7 +226,7 @@ const cropImage = async (mainImage, uniqueCode) => {
 const resizeImage = async (image) => {
   resizeX = 1152;
   resizeY = 700;
-  image.contain(resizeX, resizeY).resize(resizeX, resizeY, Jimp.RESIZE_BILINEAR);
+  image.cover(resizeX, resizeY).resize(resizeX, resizeY, Jimp.RESIZE_BILINEAR);
 
   return image;
 };
