@@ -200,25 +200,22 @@ const cropImage = async (mainImage, uniqueCode) => {
     .write(`crop${uniqueCode}/firstQuadrant.png`);
 
   secondQuadrant = await Jimp.read(mainImage);
-  secondQuadrant.contain(1152*2, 648*2)
 
-  secondQuadrant
+  secondQuadrant.contain(1152*2, 648*2)
     .crop(halfWidth, 0, halfWidth - 2, halfHeight - 2)
     .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
     .write(`crop${uniqueCode}/secondQuadrant.png`);
 
   thirdQuadrant = await Jimp.read(mainImage);
- thirdQuadrant.contain(1152*2, 648*2)
 
-  thirdQuadrant
+  thirdQuadrant.contain(1152*2, 648*2)
     .crop(0, halfHeight, halfWidth - 2, halfHeight - 2)
     .resize(resizeX, resizeY, Jimp.RESIZE_BEZIER)
     .write(`crop${uniqueCode}/thirdQuadrant.png`);
 
   fourthQuadrant = await Jimp.read(mainImage);
-  fourthQuadrant.contain(1152*2, 648*2)
 
-  fourthQuadrant
+  fourthQuadrant.contain(1152*2, 648*2)
     .crop(halfWidth, halfHeight, halfWidth - 2, halfHeight - 2)
     .resize(resizeX, resizeY, Jimp.RESIZE_CONTAIN)
     .write(`crop${uniqueCode}/fourthQuadrant.png`);
