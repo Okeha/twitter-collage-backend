@@ -130,6 +130,7 @@ const createCollage = async (req, res) => {
 const cropImage = async (mainImage, uniqueCode) => {
   let imageToCrop = await Jimp.read(mainImage);
 
+  
   //   x- horizontal start point
   //   y- vertical start point
   //   width - length
@@ -226,7 +227,17 @@ const cropImage = async (mainImage, uniqueCode) => {
 const resizeImage = async (image) => {
   resizeX = 1152;
   resizeY = 700;
-  image.cover(resizeX, resizeY).resize(resizeX, resizeY, Jimp.RESIZE_BILINEAR);
+
+  height = image.bitmap.height
+  width = image.bitmap.width
+
+  if((width/height)>0){
+    image.cover(resizeX, resizeY).resize(resizeX, resizeY, Jimp.RESIZE_BILINEAR);
+  }
+  else{
+    image.resize(resizeX, resizeY, Jimp.RESIZE_BILINEAR);
+  }
+
 
   return image;
 };
