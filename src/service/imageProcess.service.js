@@ -30,7 +30,7 @@ const createCollage = async (req, res) => {
     //resize side images
     for (i = 0; i < sideImages.length; i++) {
       let image = await Jimp.read(sideImages[i].path);
-      resizeImage(image);
+      await resizeImage(image);
 
       image.write(`process${uniqueCode}/side_image(${i + 1}).png`);
     }
