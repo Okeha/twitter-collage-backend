@@ -14,7 +14,7 @@ const createCollage = async (req, res) => {
     if (!req.files || req.files.length !== 9) {
       return res.status(400).json({
         success: false,
-        body: { message: "Please upload exactly 9 images" },
+        body: { message: "Please upload exactly 9 images (1 main image and 8 side images)" },
       });
     }
 
