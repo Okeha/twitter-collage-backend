@@ -256,7 +256,7 @@ const blitImage = async (
 };
 
 const clearFolders = async (uniqueCode) => {
-  if (fileStream.existsSync(`process${uniqueCode}`)) {
+  try{if (fileStream.existsSync(`process${uniqueCode}`)) {
     await fs.rm(`process${uniqueCode}`, { recursive: true });
   }
 
@@ -271,6 +271,10 @@ const clearFolders = async (uniqueCode) => {
 
   if (fileStream.existsSync(`results${uniqueCode}`)) {
     await fs.rm(`results${uniqueCode}`, { recursive: true });
+  }
+}catch(err){
+    console.log(err)
+    // return err;
   }
 };
 
